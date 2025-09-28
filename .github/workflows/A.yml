@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'  # タグ push 時も実行
   workflow_dispatch:
 
 jobs:
@@ -13,18 +15,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Move to correct structure
         run: |
           mkdir -p PACK/assets/minecraft
-          # 既存の間違った階層を移動
           if [ -d "PACK/minecraft/assets" ]; then
             mv PACK/minecraft/assets/* PACK/assets/minecraft/
             rm -rf PACK/minecraft
           fi
-          # pack.mcmeta はそのまま残しておく
           if [ -f "PACK/pack.mcmeta" ]; then
             echo "pack.mcmeta exists"
           fi
+
+      - name: Commit corrected PACK folder
+        run: |
+          git add PACK
+          git diff-index --quiet HEAD || git commit -m "Fix PACK structure: move assets to correct location"
+          git push origin main
+
+      - name: Create or update tag v1.0.0
+        run: |
+          git tag -f v1.0.0
+          git push origin v1.0.0 --force
 
       - name: ZIP the fixed pack
         run: |
@@ -33,7 +49,6 @@ jobs:
           cd ..
 
       - name: Create GitHub Release
-        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v1.0.0
