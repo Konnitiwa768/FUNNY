@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*'  # タグ push 時も実行
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -31,10 +31,16 @@ jobs:
             echo "pack.mcmeta exists"
           fi
 
-      - name: Commit corrected PACK folder
+      - name: ZIP the fixed pack
         run: |
-          git add PACK
-          git diff-index --quiet HEAD || git commit -m "Fix PACK structure: move assets to correct location"
+          cd PACK
+          zip -r ../MemePack-fixed.zip .
+          cd ..
+
+      - name: Commit corrected PACK folder and ZIP
+        run: |
+          git add PACK MemePack-fixed.zip
+          git diff-index --quiet HEAD || git commit -m "Fix PACK structure and add MemePack-fixed.zip"
           git push origin main
 
       - name: Create or update tag v1.0.0
@@ -42,24 +48,12 @@ jobs:
           git tag -f v1.0.0
           git push origin v1.0.0 --force
 
-      - name: ZIP the fixed pack
-        run: |
-          cd PACK
-          zip -r ../MemePack-fixed.zip .
-          cd ..
-
-      - name: Create GitHub Release
+      - name: Create GitHub Release and attach ZIP
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v1.0.0
           name: MemePack Fixed v1.0.0
           body: Corrected texture pack structure.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload ZIP to Release
-        uses: softprops/action-gh-release@v1
-        with:
           files: MemePack-fixed.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
