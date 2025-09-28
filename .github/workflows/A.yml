@@ -1,37 +1,39 @@
-name: Fix Resource Pack Structure
+name: Fix Texture Pack Structure
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  fix_structure:
+  fix-pack:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Move assets to correct location
+      - name: Move to correct structure
         run: |
-          if [ -d "minecraft/assets" ]; then
-            echo "Fixing directory structure..."
-            mkdir -p assets
-            mv minecraft/assets/minecraft assets/
-            rm -rf minecraft
-          else
-            echo "No wrong directory found, skipping."
+          mkdir -p PACK/assets/minecraft
+          # 既存の間違った階層を移動
+          if [ -d "PACK/minecraft/assets" ]; then
+            mv PACK/minecraft/assets/* PACK/assets/minecraft/
+            rm -rf PACK/minecraft
+          fi
+          # pack.mcmeta はそのまま残っているならOK、無ければ移動
+          if [ -f "PACK/pack.mcmeta" ]; then
+            echo "pack.mcmeta exists"
           fi
 
-      - name: Commit changes
+      - name: ZIP the fixed pack
         run: |
-          git config --local user.name "github-actions"
-          git config --local user.email "github-actions@github.com"
-          git add .
-          git diff --cached --quiet || git commit -m "Fix resource pack directory structure"
+          cd PACK
+          zip -r ../MemePack-fixed.zip .
+          cd ..
 
-      - name: Push changes
-        uses: ad-m/github-push-action@v0.6.0
+      - name: Upload fixed ZIP
+        uses: actions/upload-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          name: MemePack-fixed
+          path: MemePack-fixed.zip
