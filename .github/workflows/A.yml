@@ -21,7 +21,7 @@ jobs:
             mv PACK/minecraft/assets/* PACK/assets/minecraft/
             rm -rf PACK/minecraft
           fi
-          # pack.mcmeta はそのまま残っているならOK、無ければ移動
+          # pack.mcmeta はそのまま残しておく
           if [ -f "PACK/pack.mcmeta" ]; then
             echo "pack.mcmeta exists"
           fi
@@ -32,8 +32,19 @@ jobs:
           zip -r ../MemePack-fixed.zip .
           cd ..
 
-      - name: Upload fixed ZIP
-        uses: actions/upload-artifact@v3
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          name: MemePack-fixed
-          path: MemePack-fixed.zip
+          tag_name: v1.0.0
+          name: MemePack Fixed v1.0.0
+          body: Corrected texture pack structure.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload ZIP to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: MemePack-fixed.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
